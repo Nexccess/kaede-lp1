@@ -1,95 +1,106 @@
 // api/diagnose.js
-// salon楓 AI診断 / Gemini 2.5 Flash Lite
-// ============================================================
+// Path-Flow 標準 AI診断エンジン - kaede 楓 salon v2
+// Gemini: gemini-2.5-flash-lite 固定
+// service_context: kaede_mens_depilation
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL   = 'gemini-2.5-flash-lite';
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin',  '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method Not Allowed' });
+  const { answers, lp } = req.body;
 
-  try {
-    const { answers = [] } = req.body;
+  if (!answers || !Array.isArray(answers) || answers.length === 0) {
+    return res.status(400).json({ error: 'answers required' });
+  }
 
-    const QUESTIONS = [
-      '最も気になる部位はどこですか？',
-      '脱毛のご経験を教えてください',
-      'ご希望の施術スタイルは？',
-      'お肌や痛みのお悩みはありますか？',
-      'ご来店しやすい時間帯は？',
-    ];
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
+  }
 
-    const answersText = QUESTIONS
-      .map((q, i) => `Q${i + 1}. ${q}\n→ ${answers[i] || '未回答'}`)
-      .join('\n');
+  const menuList = `
+【パーツ別 単品】
+- Sパーツ（鼻下・あご・顎下 等）: ¥700 税込
+- Mパーツ（ワキ・うなじ・Vライン上 等）: ¥1,400 税込
+- MLパーツ（胸・腹・ヒジ上下 等）: ¥2,800 税込
+- Lパーツ（背中・おしり・VIO 等）: ¥4,200 税込
+- LLパーツ（太もも・ヒザ下）: ¥4,900 税込
 
-    const prompt = `
-あなたはsalon楓（東京・東浅草）のメンズ脱毛サロンのAIカウンセラーです。
-以下の診断回答をもとに、最適なメニューを提案してください。
+【スペシャルメニュー】
+- 全身脱毛（VIOなし・120分）: ¥11,000 税込
+- 顔のみ（25分）: ¥3,000 税込
+- VIO単体（25分）: ¥4,000 税込
 
-【salon楓 メニュー一覧（税込）】
-- Sパーツ単品（5分）: ¥700　鼻下・あご・唇下・ほほ・首・眉上・手足の指 など
-- Mパーツ単品（10分）: ¥1,400　わき・鎖骨・肩・うなじ・Vライン上 など
-- MLパーツ単品（20分）: ¥2,800　ヒジ上下・胸・腹
-- Lパーツ単品（30分）: ¥4,200　背中上下・おしり・VIO各ライン
-- LLパーツ単品（35分）: ¥4,900　太もも・ヒザ下
-- 顔のみコース（25分）: ¥3,000
-- VIO（25分）: ¥4,000
-- 40分 freeコース（初回限定）: ¥5,000（通常¥6,000）
-- 60分 freeコース: ¥10,000（初回¥8,000）
-- 全身脱毛コース（120分）: ¥11,000　※顔含む、VIO・二の腕・背中除く
-
-【診断回答】
-${answersText}
-
-【出力形式】必ずJSON形式のみで返してください。前置き・コメント・マークダウン不要。
-
-{
-  "message": "お客様への一言コメント（2文程度・親しみやすく）",
-  "recommended_menu": "メニュー名",
-  "recommended_price": "¥XXXX（XX分）",
-  "reason": "このメニューをおすすめする理由（2〜3文）",
-  "score": 数値（50〜100）,
-  "level": "A" または "B" または "C"
-}
-
-scoreとlevelの基準:
-- A（85以上）: 全身・freeコース等、まとまった施術意欲が高い
-- B（70〜84）: 特定部位・中程度の意欲
-- C（69以下）: お試し・1部位のみ
+【Freeコース】
+- 脱毛Freeコース 30分: 要問合せ
+- 脱毛Freeコース 60分: 要問合せ
 `;
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const prompt = `
+あなたはkaede 楓 salonのAI診断アシスタントです。
+東京浅草にある都度払いのメンズ脱毛サロンで、入会金・管理費・キャンセル料なしが特徴です。
 
-    const geminiRes = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 512,
-        },
-      }),
-    });
+以下のメニュー一覧から、ユーザーの回答に最も合ったメニューを1つ選んでください。
 
-    if (!geminiRes.ok) throw new Error(`Gemini API error: ${geminiRes.status}`);
+${menuList}
+
+ユーザーの回答（5問）:
+${answers.map((a, i) => `Q${i + 1}: ${a}`).join('\n')}
+
+以下のJSONのみを返してください。前後に説明文・マークダウンコードブロック不要。
+
+{
+  "recommended_menu": "メニュー名",
+  "price": "¥XXXXX 税込",
+  "score": 数値（0〜100）,
+  "level": "A" or "B" or "C",
+  "reason": "このメニューをおすすめする理由（2〜3文。kaede salonの都度払い・低価格・縛りなしの特徴も自然に盛り込む）"
+}
+
+スコア・レベル基準:
+- A（75〜100）: ニーズが明確で即申込み可能なユーザー
+- B（50〜74）: 検討段階だがニーズあり
+- C（0〜49）: まず1回お試しが最適なユーザー
+
+service_context: kaede_mens_depilation
+`;
+
+  try {
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 512 }
+        })
+      }
+    );
+
+    if (!geminiRes.ok) {
+      const err = await geminiRes.text();
+      console.error('Gemini API error:', err);
+      return res.status(500).json({ error: 'Gemini API failed', detail: err });
+    }
 
     const geminiData = await geminiRes.json();
-    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    // JSON抽出（マークダウン除去）
+    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const cleaned = rawText.replace(/```json|```/g, '').trim();
-    const result  = JSON.parse(cleaned);
 
-    return res.status(200).json(result);
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error('JSON parse error. rawText:', rawText);
+      return res.status(500).json({ error: 'JSON parse failed', raw: rawText });
+    }
+
+    return res.status(200).json(parsed);
 
   } catch (err) {
-    console.error('[diagnose]', err);
-    return res.status(500).json({ error: err.message });
+    console.error('diagnose.js unexpected error:', err);
+    return res.status(500).json({ error: 'Unexpected error', detail: String(err) });
   }
-};
+}
