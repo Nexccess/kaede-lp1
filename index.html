@@ -240,7 +240,16 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
   .cta-band{padding:60px 20px;}
   .diag-box{padding:28px 20px;}
   .diag-form-row{grid-template-columns:1fr;}
+  /* hero-face: スマホでは上部中央に縮小表示 */
+  .hero-face-layer{width:100% !important;height:240px !important;top:0 !important;opacity:.15 !important;-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%) !important;mask-image:linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%) !important;}
+  /* reason card images */
+  .reason-img-wrap{height:80px !important;}
+  /* CTA tablet image */
+  .cta-tablet-img{width:100% !important;height:120px !important;}
 }
+
+/* RESPONSIVE IMAGES - global */
+img{max-width:100%;height:auto;display:block;}
 
 /* FADE */
 .fade{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease;}
@@ -271,8 +280,8 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
   <div class="hero-accent"></div>
-  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
-    <img src="img/hero-face.png" alt="" style="position:absolute;right:0;top:0;height:100%;width:50%;object-fit:cover;object-position:center top;opacity:.18;mask-image:linear-gradient(to left,rgba(0,0,0,.7) 0%,transparent 100%);-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,.7) 0%,transparent 100%);">
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
+    <div class="hero-face-layer" style="position:absolute;right:0;top:0;width:55%;height:100%;background-image:url('img/hero-face.png');background-size:cover;background-position:center top;opacity:.22;-webkit-mask-image:linear-gradient(to right,transparent 0%,rgba(0,0,0,.8) 40%,rgba(0,0,0,.8) 100%);mask-image:linear-gradient(to right,transparent 0%,rgba(0,0,0,.8) 40%,rgba(0,0,0,.8) 100%);"></div>
   </div>
   <div class="hero-inner">
     <div>
@@ -313,7 +322,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
     <div class="reasons-grid">
       <div class="reason-card fade">
         <div class="reason-num">01</div>
-        <div style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
+        <div class="reason-img-wrap" style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
           <img src="img/icons-reasons.png" alt="価格アイコン" style="width:300%;height:100%;object-fit:cover;object-position:16% center;display:block;">
         </div>
         <div class="reason-title">都内最安値水準</div>
@@ -322,7 +331,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
       </div>
       <div class="reason-card fade">
         <div class="reason-num">02</div>
-        <div style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
+        <div class="reason-img-wrap" style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
           <img src="img/icons-reasons.png" alt="都度払いアイコン" style="width:300%;height:100%;object-fit:cover;object-position:50% center;display:block;margin-left:-100%;">
         </div>
         <div class="reason-title">都度払い・縛りなし</div>
@@ -331,7 +340,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
       </div>
       <div class="reason-card fade">
         <div class="reason-num">03</div>
-        <div style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
+        <div class="reason-img-wrap" style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
           <img src="img/icons-reasons.png" alt="実績アイコン" style="width:300%;height:100%;object-fit:cover;object-position:84% center;display:block;margin-left:-200%;">
         </div>
         <div class="reason-title">開業4周年・実績多数</div>
@@ -389,7 +398,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
 <div class="cta-band fade">
   <div class="section-label">AI Tool</div>
   <h2 class="section-title">自分の状況を、<br>まず整理する。</h2>
-  <img src="img/ai-tablet.png" alt="AI診断イメージ" style="width:260px;max-width:80%;height:160px;object-fit:cover;margin:20px auto;display:block;opacity:.85;border-radius:2px;">
+  <img src="img/ai-tablet.png" alt="AI診断イメージ" class="cta-tablet-img" style="width:260px;max-width:80%;height:160px;object-fit:cover;margin:20px auto;display:block;opacity:.85;border-radius:2px;">
   <p class="cta-band-desc">5問・約1分。診断結果は提案・勧誘ではありません。あなた自身が現状を把握するための一次整理です。</p>
   <div class="cta-band-btns">
     <button class="btn-dark" onclick="openDiag(null)">AI診断を試す →</button>
