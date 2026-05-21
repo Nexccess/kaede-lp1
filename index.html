@@ -252,7 +252,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
 <!-- ===== NAV ===== -->
 <nav class="nav">
   <a href="#" class="nav-logo">
-    <div class="nav-logo-mark">🍁</div>
+    <div class="nav-logo-mark" style="background:none;padding:2px;"><img src="img/maple.png" alt="楓" style="width:28px;height:28px;object-fit:contain;"></div>
     <div>
       <div class="nav-logo-text">kaede salon</div>
       <div class="nav-logo-sub">Men's Depilation</div>
@@ -271,6 +271,9 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
   <div class="hero-bg"></div>
   <div class="hero-grid"></div>
   <div class="hero-accent"></div>
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+    <img src="img/hero-face.png" alt="" style="position:absolute;right:0;top:0;height:100%;width:50%;object-fit:cover;object-position:center top;opacity:.18;mask-image:linear-gradient(to left,rgba(0,0,0,.7) 0%,transparent 100%);-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,.7) 0%,transparent 100%);">
+  </div>
   <div class="hero-inner">
     <div>
       <div class="hero-eyebrow fade">AI Diagnosis Tool</div>
@@ -310,21 +313,27 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
     <div class="reasons-grid">
       <div class="reason-card fade">
         <div class="reason-num">01</div>
-        <div class="reason-icon">💴</div>
+        <div style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
+          <img src="img/icons-reasons.png" alt="価格アイコン" style="width:300%;height:100%;object-fit:cover;object-position:16% center;display:block;">
+        </div>
         <div class="reason-title">都内最安値水準</div>
         <p class="reason-desc">入会金・管理費・キャンセル料なし。見えない費用がないから本当に安い。1パーツ700円からお試し可能。</p>
         <span class="reason-tag">S パーツ ¥700〜</span>
       </div>
       <div class="reason-card fade">
         <div class="reason-num">02</div>
-        <div class="reason-icon">🗓</div>
+        <div style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
+          <img src="img/icons-reasons.png" alt="都度払いアイコン" style="width:300%;height:100%;object-fit:cover;object-position:50% center;display:block;margin-left:-100%;">
+        </div>
         <div class="reason-title">都度払い・縛りなし</div>
         <p class="reason-desc">コース加入・回数券は一切不要。その日の気分で来れる。出張族・転勤族にも選ばれる理由。</p>
         <span class="reason-tag">コース不要</span>
       </div>
       <div class="reason-card fade">
         <div class="reason-num">03</div>
-        <div class="reason-icon">⭐</div>
+        <div style="width:100%;height:120px;overflow:hidden;margin-bottom:16px;border-radius:2px;">
+          <img src="img/icons-reasons.png" alt="実績アイコン" style="width:300%;height:100%;object-fit:cover;object-position:84% center;display:block;margin-left:-200%;">
+        </div>
         <div class="reason-title">開業4周年・実績多数</div>
         <p class="reason-desc">2020年開業から4周年突破。リピーターに支えられた確かな技術。LGBTフレンドリー対応。</p>
         <span class="reason-tag">LGBT Welcome</span>
@@ -380,6 +389,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
 <div class="cta-band fade">
   <div class="section-label">AI Tool</div>
   <h2 class="section-title">自分の状況を、<br>まず整理する。</h2>
+  <img src="img/ai-tablet.png" alt="AI診断イメージ" style="width:260px;max-width:80%;height:160px;object-fit:cover;margin:20px auto;display:block;opacity:.85;border-radius:2px;">
   <p class="cta-band-desc">5問・約1分。診断結果は提案・勧誘ではありません。あなた自身が現状を把握するための一次整理です。</p>
   <div class="cta-band-btns">
     <button class="btn-dark" onclick="openDiag(null)">AI診断を試す →</button>
@@ -455,7 +465,7 @@ footer{background:var(--black);border-top:1px solid var(--border);padding:40px;d
 
 <footer>
   <div>
-    <div class="footer-logo">🍁 kaede salon</div>
+    <div class="footer-logo"><img src="img/logo.png" alt="kaede 楓 salon" style="height:48px;object-fit:contain;opacity:.7;vertical-align:middle;"></div>
     <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;letter-spacing:.06em;">東京最安値水準・都度払いのメンズ脱毛サロン / 台東区東浅草</div>
   </div>
   <div class="footer-links">
