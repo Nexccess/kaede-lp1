@@ -614,7 +614,7 @@ const LINE_URL = 'https://line.me/R/ti/p/@436hrsli';
   if(r.invoked){return}r.invoked=true;
   var n=t.createElement("script");n.type="text/javascript";
   n.crossOrigin="anonymous";n.async=true;
-  n.src="https://cdn.amplitude.com/libs/analytics-browser-2.3.5-min.js.gz";
+  n.src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz";
   n.onload=function(){e.amplitude.runQueuedFunctions||console.log("[Amplitude] SDK failed to load.")};
   var s=t.getElementsByTagName("script")[0];s.parentNode.insertBefore(n,s);
   function i(e,t){e.prototype[t]=function(){return this._q.push({name:t,args:Array.prototype.slice.call(arguments,0)}),this}}
