@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AIメンズ脱毛診断 | kaede 楓 salon</title>
 <meta name="description" content="5つの質問に答えるだけで、あなたの現状と最適なケアプランをAIが整理します。東京浅草・都度払いのメンズ脱毛サロン。">
+<script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;500&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -610,36 +611,18 @@ const LINE_URL = 'https://line.me/R/ti/p/@436hrsli';
 // =============================================
 // AMPLITUDE 初期化
 // =============================================
-!(function(e,t){var r=e.amplitude||{_q:[],_iq:{}};
-  if(r.invoked){return}r.invoked=true;
-  var n=t.createElement("script");n.type="text/javascript";
-  n.integrity="sha384-PPfHw2ILiMflG4NqsJyYAALQD4t1+7RVxuFNuHj1GKBEcrLKBl61cTdHR9JKGQ4";
-  n.crossOrigin="anonymous";n.async=true;
-  n.src="https://cdn.amplitude.com/libs/analytics-browser-2.3.5-min.js.gz";
-  n.onload=function(){e.amplitude.runQueuedFunctions||console.log("[Amplitude] SDK failed to load.")};
-  var s=t.getElementsByTagName("script")[0];s.parentNode.insertBefore(n,s);
-  function i(e,t){e.prototype[t]=function(){return this._q.push({name:t,args:Array.prototype.slice.call(arguments,0)}),this}}
-  var a=function(){this._q=[];return this};
-  var c=["add","append","clearAll","prepend","set","setOnce","unset","preInsert","postInsert","remove","getUserProperties"];
-  for(var l=0;l<c.length;l++){i(a,c[l])}r.Identify=a;
-  var u=function(){this._q=[];return this};
-  var p=["getEventProperties","setProductId","setQuantity","setPrice","setRevenue","setRevenueType","setEventProperties"];
-  for(var d=0;d<p.length;d++){i(u,p[d])}r.Revenue=u;
-  var f=["getDeviceId","setDeviceId","getSessionId","setSessionId","getUserId","setUserId","setOptOut","setTransport","reset","extendSession"];
-  var g=["init","add","remove","track","logEvent","identify","groupIdentify","setGroup","getUserId","getDeviceId","getSessionId","setOptOut","setTransport","reset","extendSession","flush"];
-  function v(e){function t(t,r){e[t]=function(){var n={promise:new Promise(function(r){e._q.push({name:t,args:Array.prototype.slice.call(arguments,0),resolve:r})})};if(r){n.promise=n.promise.then(function(e){return e})}return n}}
-  for(var r=0;r<f.length;r++){t(f[r],false)}for(var n=0;n<g.length;n++){t(g[n],true)}return e}
-  r=v(r);r.getInstance=function(e){e=(!e||e.length===0?"$default_instance":e).toLowerCase();
-  if(!Object.prototype.hasOwnProperty.call(r._iq,e)){r._iq[e]=v({})}return r._iq[e]};
-  e.amplitude=r})(window,document);
-
-amplitude.init(AMPLITUDE_API_KEY);
-amplitude.track('page_view', { lp: LP_ID });
+// Amplitude SDK 2.11.1
+try {
+  if (typeof window.amplitude !== 'undefined') {
+    window.amplitude.init(AMPLITUDE_API_KEY, { defaultTracking: false });
+    try { window.amplitude.track('page_view', { lp: LP_ID }); } catch(e) {}
+  }
+} catch(e) { console.warn('[Amplitude] init error:', e.message); }
 
 // =============================================
 // EmailJS 初期化
 // =============================================
-emailjs.init(EMAILJS_PUBLIC_KEY);
+try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.warn('[EmailJS] init error:', e.message); }
 
 // =============================================
 // 診断データ
@@ -677,7 +660,7 @@ let diagResult = {};
 function openDiag(e) {
   document.getElementById('diagOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
-  amplitude.track('diagnosis_click', { lp: LP_ID });
+  try { window.amplitude.track('diagnosis_click', { lp: LP_ID }); } catch(e) {}
 }
 function closeDiag() {
   document.getElementById('diagOverlay').classList.remove('active');
@@ -829,7 +812,7 @@ async function submitDiagBooking() {
       sent_at: sentAt
     });
     // Amplitudeイベント
-    amplitude.track('booking_complete', { lp: LP_ID, score: diagResult.score, level: diagResult.level });
+    try { window.amplitude.track('booking_complete', { lp: LP_ID, score: diagResult.score, level: diagResult.level }); } catch(e) {}
     showScreen('diagComplete');
   } catch(err) {
     btn.disabled = false;
@@ -882,7 +865,7 @@ async function submitBooking() {
       recommended_menu: '', score: '', level: '', answers: '',
       lp: LP_ID, sent_at: sentAt
     });
-    amplitude.track('booking_complete', { lp: LP_ID, score: '', level: '' });
+    try { window.amplitude.track('booking_complete', { lp: LP_ID, score: '', level: '' }); } catch(e) {}
     document.getElementById('bookingFormWrap').style.display = 'none';
     document.getElementById('bookingComplete').style.display = 'block';
   } catch(err) {
