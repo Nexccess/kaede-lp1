@@ -788,8 +788,8 @@ async function submitDiagBooking() {
   btn.disabled = true;
   btn.textContent = '送信中...';
 
-  const dateStr = date.replace(/-/g, '/') + ' ' + time;
-  const date2Str = date2 ? date2.replace(/-/g, '/') : '';
+  const dateStr = date + ' ' + time;  // ハイフン形式のまま送信
+  const date2Str = date2 || '';
   const answersStr = answers.join(' / ');
   const sentAt = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 
@@ -854,8 +854,8 @@ async function submitBooking() {
   btn.disabled = true;
   btn.textContent = '送信中...';
 
-  const dateStr = date.replace(/-/g, '/') + ' ' + time;
-  const date2Str = date2 ? date2.replace(/-/g, '/') : '';
+  const dateStr = date + ' ' + time;  // ハイフン形式のまま送信
+  const date2Str = date2 || '';
   const sentAt = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 
   const payload = {
