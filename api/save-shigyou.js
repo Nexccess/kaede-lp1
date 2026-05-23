@@ -1,109 +1,181 @@
-// api/save-shigyou.js
-// Path-Flow 標準スプレッドシート書込みAPI - kaede 楓 salon v2
-// シート名: AI診断結果（手順書 STEP 3-2 標準11列）
+// api/save-shigyou.js — Path-Flow v3.3 | kaede salon（全LP共通）
+// 対象LP: kaede-v1 / kaede-v2 / kaede-lp2
+// Email: EmailJS REST API（Resendから移行）
+// 統合: SS書込み → Googleカレンダー登録 → EmailJS通知（全3ステップ独立実行）
 
-import { google } from 'googleapis';
+const { google } = require('googleapis');
 
-// =============================================
-// シート名（SSのタブ名と完全一致必須）
-// =============================================
-const SHEET_NAME = 'AI診断結果';
+// ── クライアント固有設定 ──────────────────────────────
+const SHEET_NAME     = 'AI診断結果';
+const NOTIFY_EMAIL   = process.env.OWNER_EMAIL  || 'info.kaedesalon@gmail.com';
+const CALENDAR_ID    = process.env.CALENDAR_ID  || 'info.kaedesalon@gmail.com';
+const SPREADSHEET_ID = process.env.SHIGYOU_SPREADSHEET_ID;
+// ─────────────────────────────────────────────────────
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+// EmailJS REST API helper
+async function sendViaEmailJS(params) {
+  const serviceId  = process.env.EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID;
+  const publicKey  = process.env.EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;  // Server-side requires private key
+
+  if (!serviceId || !templateId || !publicKey) {
+    throw new Error('EMAILJS_SERVICE_ID / TEMPLATE_ID / PUBLIC_KEY not set');
   }
 
-  const {
-    name, phone, email,
-    date, date2,
-    recommended_menu, score, level, answers,
-    lp, sent_at
-  } = req.body;
+  const body = {
+    service_id: serviceId,
+    template_id: templateId,
+    user_id: publicKey,
+    accessToken: privateKey || undefined,
+    template_params: params
+  };
 
-  const SPREADSHEET_ID = process.env.SHIGYOU_SPREADSHEET_ID;
-  const SERVICE_ACCOUNT_JSON = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-
-  if (!SPREADSHEET_ID || !SERVICE_ACCOUNT_JSON) {
-    console.error('Missing env: SHIGYOU_SPREADSHEET_ID or GOOGLE_SERVICE_ACCOUNT_JSON');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
-  let credentials;
-  try {
-    credentials = JSON.parse(SERVICE_ACCOUNT_JSON);
-  } catch (e) {
-    console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON:', e);
-    return res.status(500).json({ error: 'Invalid service account JSON' });
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'origin': 'https://main.kaedesalon.shop'
+    },
+    body: JSON.stringify(body)
   });
 
-  const sheets = google.sheets({ version: 'v4', auth });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`EmailJS ${res.status}: ${text.slice(0, 120)}`);
+  }
+  return true;
+}
 
-  // 送信日時（JST）
-  const now = sent_at || new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // =============================================
-  // 標準11列（手順書 STEP 3-2 準拠）
-  // A: 送信日時 / B: LP_ID / C: お名前 / D: 携帯電話
-  // E: メール / F: 希望日時(第1) / G: 希望日時(第2)
-  // H: おすすめメニュー / I: スコア / J: レベル / K: 診断回答
-  // =============================================
-  const row = [
-    now,
-    lp || 'kaede-v2',
-    name || '',
-    phone || '',
-    email || '',
-    date || '',
-    date2 || '',
-    recommended_menu || '',
-    score !== undefined ? String(score) : '',
-    level || '',
-    answers || ''
-  ];
+  const {
+    lp, name, phone, email,
+    date, date2,
+    recommended_menu, score, level, answers
+  } = req.body || {};
 
+  if (!name || !phone || !email || !date) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+
+  // ── Google Auth ──────────────────────────────────────
+  let auth;
   try {
-    // シートの現在のデータ行数を確認（ヘッダー自動挿入）
-    const checkRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1:A2`
+    const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    auth = new google.auth.GoogleAuth({
+      credentials: creds,
+      scopes: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/calendar'
+      ]
     });
+  } catch (e) {
+    console.error('[save-shigyou] Auth parse error:', e.message);
+    return res.status(500).json({ error: 'Auth failed' });
+  }
 
-    const existingRows = checkRes.data.values || [];
+  const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+  const log = [];
 
-    if (existingRows.length === 0) {
-      // ヘッダー行を自動挿入（初回のみ）
-      const header = [
-        '送信日時', 'LP_ID', 'お名前', '携帯電話', 'メールアドレス',
-        '希望日時（第1）', '希望日時（第2）', 'おすすめメニュー',
-        'スコア', 'レベル', '診断回答'
-      ];
+  // ── 1. Spreadsheet ────────────────────────────────────
+  try {
+    if (!SPREADSHEET_ID) throw new Error('SHIGYOU_SPREADSHEET_ID not set');
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    let hasHeader = false;
+    try {
+      const chk = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAME}!A1`
+      });
+      hasHeader = !!(chk.data.values && chk.data.values[0] && chk.data.values[0][0]);
+    } catch(_) {}
+
+    if (!hasHeader) {
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEET_NAME}!A1`,
         valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [header] }
+        requestBody: {
+          values: [['送信日時','LP_ID','お名前','携帯電話','メールアドレス',
+                    '希望日時（第1）','希望日時（第2）','推奨メニュー','スコア','レベル','診断回答']]
+        }
       });
     }
 
-    // データ行を追記
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1`,
+      range: `${SHEET_NAME}!A:K`,
       valueInputOption: 'USER_ENTERED',
-      requestBody: { values: [row] }
+      requestBody: {
+        values: [[now, lp||'', name, phone, email,
+                  date, date2||'', recommended_menu||'',
+                  score||'', level||'', answers||'']]
+      }
     });
-
-    console.log(`[save-shigyou] Written: ${name} / ${lp} / ${now}`);
-    return res.status(200).json({ success: true });
-
-  } catch (err) {
-    console.error('Sheets API error:', err?.message || err);
-    return res.status(500).json({ error: 'Sheets write failed', detail: String(err?.message || err) });
+    log.push('ss:ok');
+  } catch (e) {
+    console.error('[save-shigyou] Sheets error:', e.message);
+    log.push('ss:fail:' + e.message.slice(0, 80));
   }
-}
+
+  // ── 2. Google Calendar ────────────────────────────────
+  try {
+    const calendar = google.calendar({ version: 'v3', auth });
+    const dateStr = (date || '').split(' ')[0];
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      throw new Error('Invalid date format: ' + dateStr);
+    }
+    await calendar.events.insert({
+      calendarId: CALENDAR_ID,
+      requestBody: {
+        summary: `【仮予約】${name} 様`,
+        description: [
+          `LP: ${lp}`,
+          `メニュー: ${recommended_menu}`,
+          `スコア: ${score} / レベル: ${level}`,
+          `電話: ${phone}`,
+          `メール: ${email}`,
+          `希望日時: ${date}`,
+          `第2希望: ${date2 || 'なし'}`,
+          `診断回答: ${answers}`
+        ].join('\n'),
+        start: { date: dateStr },
+        end: { date: dateStr }
+      }
+    });
+    log.push('cal:ok');
+  } catch (e) {
+    console.error('[save-shigyou] Calendar error:', e.message);
+    log.push('cal:fail:' + e.message.slice(0, 80));
+  }
+
+  // ── 3. EmailJS ────────────────────────────────────────
+  try {
+    await sendViaEmailJS({
+      to_email:         NOTIFY_EMAIL,
+      reply_to:         email,
+      lp_id:            lp || '—',
+      customer_name:    name,
+      customer_phone:   phone,
+      customer_email:   email,
+      booking_date:     date,
+      booking_date2:    date2 || 'なし',
+      recommended_menu: recommended_menu || '—',
+      score:            String(score || '—'),
+      level:            level || '—',
+      answers:          answers || '—',
+      sent_at:          now
+    });
+    log.push('email:ok');
+  } catch (e) {
+    console.error('[save-shigyou] EmailJS error:', e.message);
+    log.push('email:fail:' + e.message.slice(0, 80));
+    // 非致命的: SSが成功していれば200を返す
+  }
+
+  const ssFailed = log.some(l => l.startsWith('ss:fail'));
+  return res.status(ssFailed ? 500 : 200).json({ ok: !ssFailed, log });
+};
